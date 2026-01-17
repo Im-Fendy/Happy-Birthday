@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HBD</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fff;
+      text-align: center;
+      padding: 50px;
+    }
+    .fade { opacity: 0; transition: opacity 0.7s ease; }
+    .show { opacity: 1; }
+    button {
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 10px;
+      background: #ff6f91;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { transform: scale(1.05); background: #ff8fa3; }
+    button:active { transform: scale(0.95); }
+
+    /* Cake */
+    .cake {
+      position: relative;
+      display: inline-block;
+      width: 200px;
+      height: 120px;
+      border-radius: 8px;
+      margin-top: 20px;
+      background: #ff8fa3;
+      overflow: visible;
+      animation: popCake 0.8s ease forwards;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+    @keyframes popCake {
+      from { transform: scale(0.2); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .layer { width: 100%; height: 33%; }
+    .layer1 { background: #ff8fa3; }
+    .layer2 { background: #fff116; }
+    .layer3 { background: #d2691e; }
+
+    .drip {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 25px;
+      background: #5c3317;
+      border-radius: 0 0 20px 20px;
+    }
+    .drip::after, .drip::before {
+      content: "";
+      position: absolute;
+      width: 20px; height: 20px;
+      background: #5c3317;
+      border-radius: 50%;
+      bottom: -10px;
+    }
+    .drip::after { left: 30px; }
+    .drip::before { left: 90px; }
+
+    .sprinkle {
+      position: absolute;
+      width: 6px; height: 2px;
+      border-radius: 2px;
+      transform: rotate(20deg);
+    }
+    .sprinkle1 { top: 5px; left: 20px; background: red; }
+    .sprinkle2 { top: 10px; left: 60px; background: blue; }
+    .sprinkle3 { top: 15px; left: 120px; background: yellow; }
+    .sprinkle4 { top: 8px; left: 160px; background: green; }
+    .sprinkle5 { top: 12px; left: 100px; background: violet; }
+
+    /* Candle + flame */
+    .candle {
+      position: absolute;
+      top: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 15px; height: 40px;
+      background: #fff;
+      border-radius: 3px;
+      box-shadow: 0 0 3px rgba(0,0,0,0.2);
+      z-index: 10;
+    }
+    .flame {
+      position: absolute;
+      top: -20px; left: 50%;
+      transform: translateX(-50%);
+      width: 15px; height: 20px;
+      background: radial-gradient(circle, yellow 40%, orange 70%, transparent 90%);
+      border-radius: 50%;
+      animation: flicker 0.2s infinite alternate;
+      cursor: pointer;
+      z-index: 20;
+    }
+    @keyframes flicker {
+      from { transform: translateX(-50%) scale(1); opacity: 1; }
+      to { transform: translateX(-50%) scale(1.2) translateY(-2px); opacity: 0.8; }
+    }
+
+    /* Smoke */
+    .smoke {
+      position: absolute;
+      top: -25px; left: 50%;
+      width: 8px; height: 8px;
+      background: rgba(200,200,200,0.5);
+      border-radius: 50%;
+      animation: rise 2s ease-out forwards;
+      pointer-events: none;
+      z-index: 5;
+    }
+    @keyframes rise {
+      0% { transform: translate(-50%,0) scale(0.6); opacity: 0.8; }
+      50% { transform: translate(-50%,-20px) scale(1); opacity: 0.4; }
+      100% { transform: translate(-50%,-40px) scale(1.4); opacity: 0; }
+    }
+
+    /* Confetti */
+    #confettiCanvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .btn-siap {
+    padding: 16px 45px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #4F46E5;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    outline: none;
+    animation: denyut-riak 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    transition: transform 0.2s;
+}
+
+.btn-siap:active {
+    transform: scale(0.95);
+}
+
+@keyframes denyut-riak {
+    0% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+    }
+    70%, 100% {
+        box-shadow: 0 0 0 25px rgba(79, 70, 229, 0);
+    }
+}
+  </style>
+</head>
+<body>
+
+  <audio id="bgMusic" loop>
+      <source src="asset/audio/web.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="content" class="fade"></div>
+  <canvas id="confettiCanvas"></canvas>
+
+  <script>
+    const content = document.getElementById("content");
+
+    function fadeContent(inner) {
+      content.classList.remove("show");
+      setTimeout(() => {
+        content.innerHTML = inner;
+        content.classList.add("show");
+      }, 400);
+    }
+
+    function shakeAndNext(nextPage, btn) {
+      btn.style.transform = "scale(1.2)";
+      setTimeout(() => {
+        btn.style.transform = "";
+        nextPage();
+      }, 500);
+    }
+    function showPage0() {
+      fadeContent(`
+      <p>👇👇👇👇👇👇👇</p>
+      </br>
+      <button class="btn-siap btn-pulse" onclick="shakeAndNext(showPage1,this); playMusic()">>> HBD!!!  <<</button>
+     `);
+    }
+    
+    function showPage1() {
+      fadeContent(`
+        <h3>🎊 Selamat 🎊</h3>
+        <h3>🎉 Ulang Tahun Wok 🎉</h3>
+        <img width="200px" src="asset/img/img2.jpeg" />
+        <p>umur boleh bertambah... tapi masalah juga jangan ditambah 😄</p>
+        <button onclick="shakeAndNext(showPage2,this)">Lanjut</button>
+      `);
+      startConfetti(2000);
+    }
+  //  function playMusic() {
+      //var audio = document.getElementById("bgMusic");
+  //    audio.play();
+   // }
+    function showPage2() {
+      fadeContent(`
+        <h3>🎁 ✨Kado Hadiah✨ 🎁 </h3>
+        <img width="150px" src="asset/img/pic2.jpg"/>
+        <p>Ini hadiah dariku</p>
+        <button onclick="shakeAndNext(showPage4,this)">Lanjut 🌚</button>
+      `);
+    }
+    function showPage4() {
+      fadeContent(`
+        <p id="rmv" >Tapi hadiahnya virtual 🤣🤪</p>
+        <div id="cakeArea">
+          <img width="150px" src="asset/gif/gif2.gif"/>
+          <button id="cakeBtn">Buka Hadiah 😆</button>
+        </div>
+      `);
+
+      setTimeout(() => {
+        const cakeBtn = document.getElementById("cakeBtn");
+        cakeBtn.addEventListener("click", () => {
+        const rmve = document.getElementById("rmv");
+          rmve.innerHTML= ""
+          const cakeArea = document.getElementById("cakeArea");
+          cakeArea.innerHTML = `
+            <div>
+              <p id="note" >Matiin api nya pake jari!! 😂</p>
+              <img id="gif8" width="150px" src="asset/gif/gif8.gif" alt="">
+              <br ><br ><br >
+            </div>
+            <div id="cake" class="cake">
+              <div class="drip"></div>
+              <div class="sprinkle sprinkle1"></div>
+              <div class="sprinkle sprinkle2"></div>
+              <div class="sprinkle sprinkle3"></div>
+              <div class="sprinkle sprinkle4"></div>
+              <div class="sprinkle sprinkle5"></div>
+              <div class="layer layer1"></div>
+              <div class="layer layer2"></div>
+              <div class="layer layer3"></div>
+              <div class="candle">
+                <div id="flame" class="flame"></div>
+              </div>
+            </div>
+            </br><br >
+            <img id="pic4" width="100px" src="asset/gif/gif3.gif"/>
+            <img id="pic3" width="100px" src="asset/gif/gif1.gif"/>
+            <br ><br >
+            <button id="btnCake" style="display:none" onclick="shakeAndNext(showPage5,this)">Lanjut 👉</button>
+          `;
+
+          // Flame event
+          setTimeout(() => {
+            const flame = document.getElementById("flame");
+            flame.addEventListener("click", () => {
+              flame.style.display = "none";
+              const candle = flame.parentElement;
+              for (let i = 0; i < 3; i++) {
+                const smoke = document.createElement("div");
+                smoke.className = "smoke";
+                smoke.style.animationDelay = (i * 0.3) + "s";
+                candle.appendChild(smoke);
+                setTimeout(() => smoke.remove(), 2000 + i * 300);
+              }
+              cakeArea.insertAdjacentHTML("beforeend","");
+              document.getElementById("btnCake").style.display = "inline-block";
+              document.getElementById("pic4").src = "asset/gif/gif7.gif";
+              document.getElementById("pic3").src = "asset/gif/gif7.gif";
+              document.getElementById("gif8").src = "asset/gif/gif6.gif";
+              document.getElementById("note").innerHTML = "<h3>🎉🥳🤩🎊🥳</h3> "
+              startConfetti(8000);
+            });
+          }, 100);
+        });
+      }, 500);
+    }
+    
+    function showPage5() {
+      fadeContent(`
+        <h5>✨🎉HBD buat Adit_fp !!!!🎉✨</h5>
+        <p>Semoga sehat selalu, panjang umur, dan makin banyak cerita seru bareng ✨</p>
+        </br>
+        <div style="width:260px">
+          <img width="83px" src="asset/gif/gif4.gif"/>
+          <img width="75px" src="asset/img/pic4.jpg"/>
+          <img width="90px" src="asset/gif/gif5.gif"/>
+        </div>        
+        <img width="200px" src="asset/img/pic9.png"/>
+        <img width="200px" src="asset/img/img2.jpeg"/>
+        `);
+        
+      startConfetti(10000);
+
+      setTimeout(() => {
+        const noBtn = document.getElementById("noBtn");
+        noBtn.addEventListener("click", () => {
+          let interval = setInterval(() => {
+            const maxX = window.innerWidth - noBtn.offsetWidth - 20;
+            const maxY = window.innerHeight - noBtn.offsetHeight - 20;
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            noBtn.style.position = "absolute";
+            noBtn.style.left = `${x}px`;
+            noBtn.style.top = `${y}px`;
+          }, 500);
+        }, { once: true });
+      }, 500);
+    }
+
+    const confettiCanvas = document.getElementById("confettiCanvas"),
+      ctx = confettiCanvas.getContext("2d");
+    let confettiParticles = [];
+
+    function resizeCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function ConfettiParticle() {
+      this.x = Math.random() * confettiCanvas.width;
+      this.y = Math.random() * confettiCanvas.height - confettiCanvas.height;
+      this.size = Math.random() * 8 + 2;
+      this.speed = Math.random() * 3 + 2;
+      this.color = `hsl(${Math.random() * 360},100%,50%)`;
+      this.alpha = 1;
+      this.rotation = Math.random() * 360;
+      this.rotationSpeed = Math.random() * 10 - 5;
+      this.update = function(fading) {
+        this.y += this.speed;
+        this.rotation += this.rotationSpeed;
+        if (fading) this.alpha -= 0.01;
+        if (this.y > confettiCanvas.height) {
+          this.y = -10;
+          this.x = Math.random() * confettiCanvas.width;
+          if (fading) this.alpha = 0;
+        }
+      };
+      this.draw = function() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation * Math.PI/180);
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+        ctx.restore();
+      };
+    }
+
+    function initConfetti() {
+      confettiParticles = [];
+      for (let i = 0; i < 150; i++) confettiParticles.push(new ConfettiParticle());
+    }
+
+    function startConfetti(duration = 6000) {
+      initConfetti();
+      let fading = false;
+      function loop() {
+        ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiParticles.forEach((p,i) => {
+          p.update(fading);
+          p.draw();
+          if (fading && p.alpha <= 0) confettiParticles.splice(i,1);
+        });
+        if (confettiParticles.length > 0) requestAnimationFrame(loop);
+      }
+      loop();
+      setTimeout(()=>{ fading = true; }, duration);
+    }
+
+    // Start
+    showPage0();
+  </script>
+</body>
+</html>
